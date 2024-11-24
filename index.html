@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integral por Método del Trapecio</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Método del Trapecio</h1>
+  
+  <form id="parametersForm">
+    <label for="function">Función (en términos de x):</label>
+    <input type="text" id="function" name="function" value="cos(x)" required>
+    <small>Ejemplo: x**2, cos(x), exp(x), log(x)</small><br><br>
+    
+    <label for="a">Inicio del intervalo (a):</label>
+    <input type="number" id="a" name="a" step="any" value="0" required><br><br>
+    
+    <label for="b">Fin del intervalo (b):</label>
+    <input type="number" id="b" name="b" step="any" value="3.1416" required><br><br>
+    
+    <label for="n">Número de subintervalos (n):</label>
+    <input type="number" id="n" name="n" value="10" required><br><br>
+    
+    <button type="submit">Calcular y Graficar</button>
+  </form>
+
+  <canvas id="graph" width="800" height="400"></canvas>
+
+  <script>
+    // Método del Trapecio
+    function trapezoidalIntegral(f, a, b, n) {
+      const h = (b - a) / n;
+      let sum = f(a) + f(b);
+
+      for (let i = 1; i < n; i++) {
+        const x = a + i * h;
+        sum += 2 * f(x);
+      }
+
+      return (h / 2) * sum;
+    }
+
+    // Generar puntos para la gráfica
+    function generateGraphPoints(f, a, b, n) {
+      const h = (b - a) / n;
+      const points = [];
+
+      for (let i = 0; i <= n; i++) {
+        const x = a + i * h;
+        points.push({ x: x, y: f(x) });
+      }
+
+      return points;
+    }
+
+    // Crear función dinámica con Math
+    function createFunction(funcString) {
+      const mathFunctions = Object.getOwnPropertyNames(Math)
+        .filter(name => typeof Math[name] === "function")
+        .join(", ");
+      
+      const safeFunc = `
+        const { ${mathFunctions} } = Math;
+        return function(x) {
+          return ${funcString};
+        }
+      `;
+      
+      try {
+        return new Function(safeFunc)();
+      } catch (error) {
+        alert("Error en la función ingresada. Por favor revisa la sintaxis.");
+        throw error;
+      }
+    }
+
+    // Actualizar gráfico y cálculo
+    function updateGraph(funcString, a, b, n) {
+      const f = createFunction(funcString); // Crear función dinámica
+
+      // Calcular integral
+      const integral = trapezoidalIntegral(f, a, b, n);
+      console.log("Integral aproximada:", integral);
+
+      // Generar puntos para graficar
+      const points = generateGraphPoints(f, a, b, n);
+
+      // Crear datos para Chart.js
+      const labels = points.map(p => p.x.toFixed(2));
+      const data = points.map(p => p.y);
+
+      // Actualizar o crear gráfica
+      if (window.chart) {
+        window.chart.data.labels = labels;
+        window.chart.data.datasets[0].data = data;
+        window.chart.options.plugins.title.text = `Integral aproximada: ${integral.toFixed(4)}`;
+        window.chart.update();
+      } else {
+        const ctx = document.getElementById("graph").getContext("2d");
+        window.chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "f(x)",
+                data: data,
+                borderColor: "blue",
+                fill: false,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: `Integral aproximada: ${integral.toFixed(4)}`,
+              },
+            },
+            scales: {
+              x: {
+                title: { display: true, text: "x" },
+              },
+              y: {
+                title: { display: true, text: "f(x)" },
+              },
+            },
+          },
+        });
+      }
+    }
+
+    // Manejar el formulario
+    document.getElementById("parametersForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      // Obtener valores del formulario
+      const funcString = document.getElementById("function").value;
+      const a = parseFloat(document.getElementById("a").value);
+      const b = parseFloat(document.getElementById("b").value);
+      const n = parseInt(document.getElementById("n").value, 10);
+
+      // Actualizar gráfica
+      updateGraph(funcString, a, b, n);
+    });
+
+    // Inicializar con valores por defecto
+    updateGraph("cos(x)", 0, Math.PI, 10);
+  </script>
+</body>
+</html>
