@@ -71,6 +71,9 @@
         }
       `;
       
+        // Reemplazar e por Math.E
+        funcString = funcString.replace(/\be\b/g, "Math.E");
+
       const safeFunc = `
         const { ${mathFunctions} } = Math;
         return function(x) {
